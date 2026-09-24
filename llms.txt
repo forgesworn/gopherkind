@@ -6,7 +6,7 @@
 > Virtual holes render any npub's kind 0 profile, kind 1 notes and
 > NIP-23 long-form articles as browsable gopherspace with no publishing
 > required. TypeScript on Node >= 24. Runtime dependencies are nostr-tools
-> (pinned 2.23.9) and ws (pinned 8.21.1).
+> (pinned 2.23.9) and ws (pinned 8.21.3).
 >
 > Formerly named burrow; renamed before first release, so no published
 > version ever carried the old name.
@@ -91,8 +91,16 @@ installing via `npx gopherkind`.
   `gopherkind read gopher://host/T/selector`,
   `gopherkind search <npub> <query>`,
   `gopherkind search gopher://host/7/selector <query>` (e.g. Veronica-2)
-- write: `gopherkind post <text> [--dry-run]`, `gopherkind feed [--limit 20]`,
-  `gopherkind delete <id|note1|nevent1> [--wide] [--reason x]` (NIP-09)
+- inspect and export (no identity needed): `gopherkind inspect <npub> [--json]`
+  shows, per configured, hinted and author write relay, which current
+  documents it holds, including stale and missing paths; a snapshot of
+  retrievability now, not a retention guarantee. `gopherkind export <npub>
+  <dir>` writes a lossless, re-publishable snapshot (text and kindmap files
+  plus a `.gopherkind.json` manifest); `gopherkind publish <dir>` round-trips
+  it exactly.
+- write: `gopherkind post <text> [--as npub1...] [--dry-run]`,
+  `gopherkind feed [--limit 20]`,
+  `gopherkind delete <id|note1|nevent1> [--wide] [--reason x] [--dry-run]` (NIP-09)
 - identity: `gopherkind pair <bunker://...>`, `gopherkind unpair`,
   `gopherkind whoami`. Signing is remote-only: `GOPHERKIND_BUNKER` one-off
   URI, then the stored NIP-46 pairing. Local secret keys are never accepted.
@@ -100,19 +108,34 @@ installing via `npx gopherkind`.
   serves at `/about`; `why` inside the interactive browser does the same
 - `gopherkind version` (`--version`, `-v`) and `gopherkind help` (`--help`,
   `-h`) answer without a signer or a relay
-- all commands take `[--relay wss://...]...` and `[--state-dir d]`
-- `gopherkind serve [--port 7070] [--gemini-port 1965] [--host 127.0.0.1]
-  [--hostname x] [--public-port n] [--relay wss://...]...
-  [--pin npub1...]... [--cert f --key f] [--state-dir ~/.gopherkind]
-  [--no-gemini] [--no-virtual] [--no-identity]`
-- `gopherkind publish <dir> [--relay ...] [--expire 30d] [--dry-run]`,
-  signs with the remote NIP-46 signer. Text files become type 0;
-  `index.map`/`gophermap` become their directory's menu; other `*.map`
-  files become menus at their own path. Publishing uses the union of configured
-  and author NIP-65 write relays, spreads an existing relay list and verifies
-  read-back.
-- `gopherkind unpublish </path>... | --all [--dry-run]`: NIP-09 kind 5
-  deletion request with `e`, `a` and `k` tags.
+- all commands take `[--relay wss://...]...`, `[--proxy socks5h://host:port]`
+  and `[--state-dir d]`. `--proxy` routes relay connections through a SOCKS5
+  proxy (use `socks5h` so DNS, and any `.onion` names, resolve at the proxy;
+  Tor's default is `socks5h://127.0.0.1:9050`). `GOPHERKIND_PROXY` does the
+  same.
+- `gopherkind serve [--port 7070] [--host 127.0.0.1] [--hostname name]
+  [--public-port n] [--gemini-port 1965] [--no-gemini] [--http-port 8070]
+  [--no-http] [--http-url https://bridge.example] [--http-behind-proxy]
+  [--no-local-trust] [--trust-loopback-anyway] [--cert f --key f]
+  [--state-dir d] [--pin npub1...]... [--home npub1...] [--no-virtual]
+  [--no-identity]`. The http frontend is the one to point lynx at for the
+  full client.
+- `gopherkind announce --hostname bridge.example [--http-url
+  https://bridge.example] [--gopher-port 70] [--gemini-port 1965]
+  [--no-gemini] [--name n] [--about a] [--as npub1...] [--dry-run]`: tells
+  Nostr clients this bridge opens kind 31436 (NIP-89).
+- `gopherkind publish <dir> [--relay ...] [--as npub1...] [--expire 30d]
+  [--dry-run] [--force]`, signs with the remote NIP-46 signer. Text files
+  become type 0; `index.map`/`gophermap` become their directory's menu; other
+  `*.map` files become menus at their own path. Only signs documents the
+  relays do not already carry unchanged; `--force` signs every one of them
+  regardless. Publishing uses the union of configured and author NIP-65
+  write relays, spreads an existing relay list and verifies read-back.
+- `gopherkind unpublish </path>... | --all [--as npub1...] [--dry-run]`:
+  NIP-09 kind 5 deletion request with `e`, `a` and `k` tags.
+- `--as npub1...` (on `post`, `publish`, `unpublish`, `announce`) refuses to
+  sign unless the resolved signer is that npub; worth using whenever one
+  signer holds more than one identity.
 
 ## Implementation notes
 
