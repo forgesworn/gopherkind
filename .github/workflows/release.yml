@@ -48,6 +48,6 @@ jobs:
   npm-release:
     needs: github-release
     if: vars.NPM_PUBLISH_ENABLED == 'true'
-    uses: forgesworn/anvil/.github/workflows/release.yml@d4294e622932d93957d73e5b1af0267382b6af04 # v0
+    uses: forgesworn/anvil/.github/workflows/release.yml@ac7727cccb5d4ac7ad0aa71b1b775e6120a369b3 # v0
     with:
       tag: ${{ inputs.tag || '' }}
